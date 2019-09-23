@@ -5,6 +5,8 @@ package client
 // ClusteradmCfg is just a placeholder
 // TODO: this is just a placeholder
 type ClusteradmCfg struct {
-	Bootstrap string
-	Providers []string
+	Bootstrap    string
+	Providers    []string
+	Repositories map[string]string
+	GitHubToken  string
 }

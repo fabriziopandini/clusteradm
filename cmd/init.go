@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -34,9 +35,14 @@ var initCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(initCmd)
 	initCmd.Flags().StringSlice("providers", nil, "providers to initialize")
-	initCmd.Flags().String("bootstrap", "", "provider used to bootstrap")
 	initCmd.MarkFlagRequired("providers")
-	initCmd.Flags().Lookup("bootstrap").NoOptDefVal = "kind"
+
+	initCmd.Flags().String("bootstrap", "", "provider used to bootstrap")
+	initCmd.Flags().Lookup("bootstrap").NoOptDefVal = "kubeadm"
+
+	initCmd.Flags().StringSlice("repositories", nil, "repositories for cluster api components resources")
+
+	initCmd.Flags().String("github-token", "", "personal access token for using github api without rate limits")
 	// TODO - determine bootstrap/pivot scenario
 }
 
@@ -45,15 +51,30 @@ func runInit(cmd *cobra.Command, args []string) {
 	// TODO preflight checks to determine if KUBECONFIG exists for local=false.
 	// if not, print long help thing.
 	// 1. If it's already running exit with note on the version running.
-	fmt.Println("performing init...")
 
 	config := client.ClusteradmCfg{}
 
 	bootstrap, _ := cmd.Flags().GetString("bootstrap")
 	config.Bootstrap = bootstrap
 
-	cc, _ := client.NewClusteradmClient()
 	providers, _ := cmd.Flags().GetStringSlice("providers")
 	config.Providers = providers
-	cc.Init(config)
+
+	repositories, _ := cmd.Flags().GetStringSlice("repositories")
+	config.Repositories = map[string]string{}
+	for _, r := range repositories {
+		t := strings.Split(r, "=")
+		//TODO: validate
+		component := t[0]
+		url := t[1]
+		config.Repositories[component] = url
+	}
+
+	config.GitHubToken, _ = cmd.Flags().GetString("github-token")
+
+	cc, _ := client.NewClusteradmClient()
+	err := cc.Init(config)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
 }

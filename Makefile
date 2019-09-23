@@ -1,4 +1,9 @@
 
+# Use GOPROXY environment variable if set
+GOPROXY := $(shell go env GOPROXY)
+GOPROXY ?= https://proxy.golang.org
+export GOPROXY
+
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
